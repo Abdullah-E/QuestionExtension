@@ -1,47 +1,53 @@
-import { Tokenizer } from '@huggingface/tokenizers'
-import { QuestionAnsweringPipeline } from '@huggingface/models'
+import fetch from 'node-fetch';
+import {load} from 'cheerio';
+import { HfInference } from '@huggingface/inference';
 
-async function main() {
-  // Load the tokenizer and question answering pipeline
-  const tokenizer = await Tokenizer.fromPretrained('bert-large-uncased-whole-word-masking-finetuned-squad');
-  const pipeline = new QuestionAnsweringPipeline({ model: 'bert-large-uncased-whole-word-masking-finetuned-squad', tokenizer });
-
-  // Set your input data
-  const question = 'What is the capital of France?';
-  const url = 'https://en.wikipedia.org/wiki/France'; // URL of the Wikipedia page for France
-
-  // Fetch and preprocess the content from the URL (you'll need to use a suitable library)
-  const pageContent = await fetchAndPreprocessContent(url);
-
-  // Combine the question and content
-  const context = `${question} ${pageContent}`;
-
-  // Perform question answering
-  const answer = await pipeline(context, question);
-
-  console.log('Answer:', answer);
-}
-
-async function fetchAndPreprocessContent(url) {
+async function fetchAndConcatenateText(url) {
   try {
-    // Fetch the HTML content from the URL
-    const response = await axios.get(url);
-    const htmlContent = response.data;
+    const response = await fetch(url);
 
-    // Use Cheerio to parse the HTML content
-    const $ = cheerio.load(htmlContent);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+    }
 
-    // Extract and preprocess the text from all <p> tags
-    const paragraphs = $('p').map((_, element) => $(element).text()).get();
+    const htmlContent = await response.text();
 
-    // Join the paragraphs and return as a single string
-    const preprocessedContent = paragraphs.join(' ');
+    // Load the HTML content using cheerio
+    const $ = load(htmlContent);
 
-    return preprocessedContent;
+    // Extract text from <p> and <h> tags
+    const paragraphs = $('p, h1, h2, h3, h4, h5, h6');
+    let concatenatedText = '';
+
+    paragraphs.each((index, paragraph) => {
+      concatenatedText += $(paragraph).text() + ' ';
+    });
+
+    return concatenatedText.trim();
   } catch (error) {
-    console.error('Error fetching or processing content:', error);
-    throw error;
+    console.error('Error fetching and concatenating webpage text:', error);
+    return null;
   }
 }
 
-main().catch(error => console.error(error));
+const api_key = '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'
+const inference = new HfInference(api_key)
+
+const ai_model = 'deepset/tinyroberta-squad2'
+
+const tab_url = 'https://en.wikipedia.org/wiki/France'
+const tab_context = await fetchAndConcatenateText(tab_url)
+const question = 'What is the summary of the history of france?'
+
+
+const response = await inference.questionAnswering({
+  model: ai_model,
+  inputs: {
+    question: question,
+    context: tab_context
+  }
+})
+
+console.log("Question: ", question)
+console.log("Answer: ", response.answer)
+console.log("Confidence: ", (response.score*100).toFixed(2), '%')
