@@ -1,39 +1,47 @@
-import axios from 'axios'
-import {HfInference} from '@huggingface/inference'
+import { Tokenizer } from '@huggingface/tokenizers'
+import { QuestionAnsweringPipeline } from '@huggingface/models'
 
-const api_key = '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'
+async function main() {
+  // Load the tokenizer and question answering pipeline
+  const tokenizer = await Tokenizer.fromPretrained('bert-large-uncased-whole-word-masking-finetuned-squad');
+  const pipeline = new QuestionAnsweringPipeline({ model: 'bert-large-uncased-whole-word-masking-finetuned-squad', tokenizer });
 
-const API_URL = 'https://api-inference.huggingface.co/models/gpt2';
+  // Set your input data
+  const question = 'What is the capital of France?';
+  const url = 'https://en.wikipedia.org/wiki/France'; // URL of the Wikipedia page for France
 
-const inference = new HfInference(api_key)
+  // Fetch and preprocess the content from the URL (you'll need to use a suitable library)
+  const pageContent = await fetchAndPreprocessContent(url);
 
-await hf.documentQuestionAnswering({
-  model: 'impira/layoutlm-document-qa',
-  inputs: {
-    question: 'Invoice number?',
-    image: await (await fetch('https://huggingface.co/spaces/impira/docquery/resolve/2359223c1837a7587402bda0f2643382a6eefeab/invoice.png')).blob(),
-  }
-})
+  // Combine the question and content
+  const context = `${question} ${pageContent}`;
 
-async function askQuestion(question) {
-  const response = await axios.post(API_URL, {
-    inputs: question,
-    parameters: {
-      max_new_tokens: 100,
-      temperature: 0.7,
-      num_return_sequences: 1,
-    },
-  }, {
-    headers: {
-      'Authorization': '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',
-      'Content-Type': 'application/json',
-    },
-  });
+  // Perform question answering
+  const answer = await pipeline(context, question);
 
-  return response.data[0].generated_text;
+  console.log('Answer:', answer);
 }
 
-const question = "What is the capital of France?";
-askQuestion(question).then((answer) => {
-  console.log(answer);
-});
+async function fetchAndPreprocessContent(url) {
+  try {
+    // Fetch the HTML content from the URL
+    const response = await axios.get(url);
+    const htmlContent = response.data;
+
+    // Use Cheerio to parse the HTML content
+    const $ = cheerio.load(htmlContent);
+
+    // Extract and preprocess the text from all <p> tags
+    const paragraphs = $('p').map((_, element) => $(element).text()).get();
+
+    // Join the paragraphs and return as a single string
+    const preprocessedContent = paragraphs.join(' ');
+
+    return preprocessedContent;
+  } catch (error) {
+    console.error('Error fetching or processing content:', error);
+    throw error;
+  }
+}
+
+main().catch(error => console.error(error));
