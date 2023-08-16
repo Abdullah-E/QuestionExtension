@@ -37,7 +37,7 @@ const ai_model = 'deepset/tinyroberta-squad2'
 
 const tab_url = 'https://en.wikipedia.org/wiki/France'
 const tab_context = await fetchAndConcatenateText(tab_url)
-const question = 'What is the summary of the history of france?'
+const question = 'What is the capital of france?'
 
 
 const response = await inference.questionAnswering({
