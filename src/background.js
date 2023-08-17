@@ -1,5 +1,7 @@
 // This script runs in the background of the Chrome extension and handles question-answering.
 
+import fetch from 'node-fetch';
+import {load} from 'cheerio';
 import { HfInference } from '@huggingface/inference';
 
 // Define your Hugging Face API key and model name
@@ -34,7 +36,8 @@ async function fetchAndConcatenateText(url) {
     }
   }
 // Listen for messages from the popup script
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async(request, sender, sendResponse) => {
+  
   if (request.action === 'performQuestionAnswering') {
     try {
       // Fetch and concatenate text from the current tab's webpage (Implement fetchAndConcatenateText function)
@@ -42,7 +45,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 
       // Get the user's question from the request
       const question = request.question;
-
+      console.log("got the question: ", question)
       // Initialize the Hugging Face Inference client
       const inference = new HfInference(api_key);
 
@@ -54,12 +57,17 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
           context: tab_context,
         },
       });
-
+      console.log(response.answer)
       // Send the answer and confidence score back to the popup script
+      // return ({
+      //   answer: response.answer,
+      //   score: response.score,
+      // })
       sendResponse({
         answer: response.answer,
         score: response.score,
       });
+      
     } catch (error) {
       console.error('Error performing question-answering:', error);
       sendResponse({ error: 'An error occurred while performing question-answering' });
