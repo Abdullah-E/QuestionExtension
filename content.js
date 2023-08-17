@@ -23,7 +23,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Send a message to the background script to perform question-answering
                 console.log("idhr")
                 const response = await chrome.runtime.sendMessage({ action: 'performQuestionAnswering', question: userQuestion, URL:url });
-                console.log("udhr")
+                console.log("response")
+                console.log(response.answer)
                 // Display the answer and confidence score in the answerDiv
                 answerDiv.innerHTML = `Answer: ${response.answer}<br>Confidence: ${(response.score * 100).toFixed(2)} %`;
             } catch (error) {

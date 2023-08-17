@@ -35,11 +35,13 @@ async function fetchAndConcatenateText(url) {
   }
 // Listen for messages from the popup script
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+  console.log(request.action)
   if (request.action === 'performQuestionAnswering') {
     try {
+      console.log("back")
       // Fetch and concatenate text from the current tab's webpage (Implement fetchAndConcatenateText function)
       const tab_context = await fetchAndConcatenateText(request.URL);
-
+      console.log(request.URL)
       // Get the user's question from the request
       const question = request.question;
 
