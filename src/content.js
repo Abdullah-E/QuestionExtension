@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Get the user's question from the input field
     console.log("click");
     const userQuestion = questionInput.value;
-    answerDiv.innerHTML = `Please wait while answer is loading...<br>Please press submit button once`;
+    answerDiv.innerHTML = `Please wait while answer is loading...`;
     if (userQuestion) {
       try {
         const queryOptions = { active: true, currentWindow: true };
